@@ -1,0 +1,56 @@
+name: Build dictionaries
+
+on:
+  schedule:
+    - cron: "0 4 3 * *" # monthly, on the 3rd
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-dictionaries
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Test pipeline
+        run: python -m unittest discover -s pipeline/tests
+
+      - name: Build dictionaries
+        run: |
+          for lang in $(python -c "import json; print(' '.join(json.load(open('pipeline/languages.json'))))"); do
+            python pipeline/build.py download "$lang" --out data/raw
+            python pipeline/build.py build "$lang" --input "data/raw/$lang.jsonl.gz" --out dist
+            rm "data/raw/$lang.jsonl.gz"
+          done
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="data-$(date -u +%Y-%m-%d)"
+          python pipeline/build.py manifest --dist dist \
+            --base-url "https://github.com/${{ github.repository }}/releases/download/$tag" \
+            --out dist/manifest.json
+          gh release create "$tag" dist/*.sqlite.xz dist/manifest.json \
+            --title "Dictionaries $(date -u +%Y-%m-%d)" \
+            --notes "Dictionary data from Wiktionary via kaikki.org. Licensed under CC BY-SA 4.0." \
+            --latest
+
+      - name: Remove old releases (keep 3)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list --limit 100 --json tagName --jq '.[].tagName' \
+            | grep '^data-' | sort -r | tail -n +4 \
+            | xargs -r -I{} gh release delete {} --yes --cleanup-tag
