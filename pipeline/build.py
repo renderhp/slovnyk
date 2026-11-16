@@ -17,6 +17,7 @@ import hashlib
 import json
 import lzma
 import os
+import re
 import shutil
 import sqlite3
 import sys
@@ -28,8 +29,9 @@ from pathlib import Path
 SCHEMA_VERSION = 1
 LANGUAGES_FILE = Path(__file__).with_name("languages.json")
 
+# Per sense: short usage examples first, then quotations (shortest first) to fill up.
 MAX_EXAMPLES_PER_SENSE = 3
-MAX_EXAMPLE_LEN = 300
+MAX_EXAMPLE_LEN = 400
 
 # Tags on `forms` that describe table structure rather than an actual word form.
 IGNORED_FORM_TAGS = {"table-tags", "inflection-template", "class", "romanization"}
@@ -105,19 +107,55 @@ def convert_sense(sense: dict) -> dict | None:
         if targets:
             out[key] = targets
 
-    examples = []
-    for ex in sense.get("examples") or []:
-        # Skip long literary quotations; keep short usage examples.
-        if ex.get("type") == "quotation" or ex.get("ref"):
-            continue
-        text = (ex.get("text") or "").strip()
-        if text and len(text) <= MAX_EXAMPLE_LEN:
-            examples.append(text)
-        if len(examples) >= MAX_EXAMPLES_PER_SENSE:
-            break
+    examples = select_examples(sense.get("examples") or [])
     if examples:
         out["examples"] = examples
     return out
+
+
+_REF_JUNK = [
+    re.compile(r",?\s*→\s*(OCLC|ISBN|DOI|LCCN|ISSN|JSTOR|PMID|CODEN)\b[^,;:]*"),
+    re.compile(r",?\s*archived from the original on [^,;:]*", re.IGNORECASE),
+    re.compile(r",?\s*retrieved [^,;:]*", re.IGNORECASE),
+    re.compile(r"\s*\[…\]"),
+]
+
+
+def clean_ref(ref: str) -> str:
+    """Shorten a quotation source line, dropping identifiers and archive notes."""
+    ref = " ".join(ref.split())
+    for pattern in _REF_JUNK:
+        ref = pattern.sub("", ref)
+    ref = re.sub(r"\s+([,;:])", r"\1", ref)
+    return ref.strip(" ,;:")
+
+
+def select_examples(raw_examples: list) -> list[dict]:
+    """Up to MAX_EXAMPLES_PER_SENSE items: {"text", "ref"?, "translation"?}.
+    Usage examples come first (in source order), then the shortest quotations."""
+    usage, quotes = [], []
+    for i, ex in enumerate(raw_examples):
+        text = " ".join((ex.get("text") or "").split())
+        if not text or len(text) > MAX_EXAMPLE_LEN:
+            continue
+        item = {"text": text}
+        ref = clean_ref(ex.get("ref") or "")
+        if ref:
+            item["ref"] = ref
+        translation = (ex.get("english") or ex.get("translation") or "").strip()
+        if translation:
+            item["translation"] = translation
+        if ex.get("type") == "quotation" or ref:
+            quotes.append((len(text), i, item))
+        else:
+            usage.append(item)
+
+    chosen = usage[:MAX_EXAMPLES_PER_SENSE]
+    room = MAX_EXAMPLES_PER_SENSE - len(chosen)
+    if room > 0 and quotes:
+        picked = sorted(quotes)[:room]
+        chosen += [item for _, _, item in sorted(picked, key=lambda q: q[1])]
+    return chosen
 
 
 def convert_sounds(sounds: list) -> tuple[list, list]:

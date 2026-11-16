@@ -17,6 +17,32 @@ class NormalizeTest(unittest.TestCase):
         self.assertEqual(build.normalize("NAÏVE"), "naive")
 
 
+class SelectExamplesTest(unittest.TestCase):
+    def test_usage_examples_first_then_shortest_quotations(self):
+        raw = [
+            {"text": "quote that is quite long", "type": "quotation", "ref": "A"},
+            {"text": "usage one", "type": "example"},
+            {"text": "short quote", "type": "quotation", "ref": "B"},
+            {"text": "mid-size quote", "type": "quotation", "ref": "C"},
+        ]
+        texts = [e["text"] for e in build.select_examples(raw)]
+        self.assertEqual(texts, ["usage one", "short quote", "mid-size quote"])
+
+    def test_cap_with_only_usage_examples(self):
+        raw = [{"text": f"ex {i}", "type": "example"} for i in range(6)]
+        raw.append({"text": "q", "type": "quotation", "ref": "R"})
+        self.assertEqual(len(build.select_examples(raw)), build.MAX_EXAMPLES_PER_SENSE)
+        self.assertNotIn("ref", build.select_examples(raw)[-1])
+
+
+class CleanRefTest(unittest.TestCase):
+    def test_clean_ref(self):
+        self.assertEqual(
+            build.clean_ref("2001, John Smith, Some Book […], Penguin, →ISBN, page 12, archived from the original on 1 May 2020:"),
+            "2001, John Smith, Some Book, Penguin, page 12",
+        )
+
+
 class BuildTest(unittest.TestCase):
     def setUp(self):
         import tempfile
@@ -38,7 +64,7 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(len(data["senses"]), 1)
         sense = data["senses"][0]
         self.assertEqual(sense["qualifier"], "social")
-        self.assertEqual(sense["examples"], ["a free man"])
+        self.assertEqual(sense["examples"], [{"text": "a free man"}, {"text": "Long quote", "ref": "1900, Someone"}])
         self.assertEqual([i["ipa"] for i in data["ipa"]], ["/fɹiː/"])
         self.assertEqual(data["audio"], [{"url": "https://example.org/a.mp3", "file": "En-uk-free.ogg", "tags": ["UK"]}])
         self.assertNotIn("etymology", data)
