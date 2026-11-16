@@ -13,6 +13,13 @@ python3 pipeline/build.py download en
 python3 pipeline/build.py build en --input data/raw/en.jsonl.gz
 ```
 
+## Building the app
+
+```sh
+brew install xcodegen
+cd ios && xcodegen generate && open Slovnyk.xcodeproj
+```
+
 ## License
 
 Code: MIT. Dictionary data: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), see [DATA_LICENSE.md](DATA_LICENSE.md).

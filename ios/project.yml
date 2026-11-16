@@ -1,0 +1,48 @@
+name: Slovnyk
+options:
+  bundleIdPrefix: com.renderhp
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Slovnyk:
+    type: application
+    platform: iOS
+    sources: [Slovnyk]
+    dependencies:
+      - sdk: libsqlite3.tbd
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.renderhp.slovnyk
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Slovnyk
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        CODE_SIGN_STYLE: Automatic
+  SlovnykTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SlovnykTests
+    dependencies:
+      - target: Slovnyk
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.renderhp.slovnyk.tests
+schemes:
+  Slovnyk:
+    build:
+      targets:
+        Slovnyk: all
+        SlovnykTests: [test]
+    test:
+      targets: [SlovnykTests]
