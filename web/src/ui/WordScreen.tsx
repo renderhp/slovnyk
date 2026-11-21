@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks'
 import { failedUrl, play, playingUrl, stop } from '../lib/audio'
 import { db } from '../lib/db'
+import { activeMeta } from '../lib/library'
 import {
   accentLabel,
   displayIPA,
@@ -39,7 +40,8 @@ export function WordScreen({ word }: { word: string }) {
     }
   }, [word])
 
-  const wiktionary = `https://en.wiktionary.org/wiki/${encodeURIComponent(word.replaceAll(' ', '_'))}#English`
+  const section = (activeMeta.value?.lang_name ?? 'English').replaceAll(' ', '_')
+  const wiktionary = `https://en.wiktionary.org/wiki/${encodeURIComponent(word.replaceAll(' ', '_'))}#${section}`
 
   return (
     <div class="screen word-screen">

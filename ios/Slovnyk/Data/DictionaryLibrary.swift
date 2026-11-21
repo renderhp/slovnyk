@@ -79,6 +79,7 @@ final class DictionaryLibrary {
         if case .downloading = installStates[info.lang] { return }
         if installStates[info.lang] == .installing { return }
         installStates[info.lang] = .downloading(0)
+        let isUpdate = installed[info.lang] != nil
         do {
             let lang = info.lang
             let downloaded = try await Downloader.download(info.url) { [weak self] fraction in
@@ -95,7 +96,8 @@ final class DictionaryLibrary {
             installed[lang] = info
             saveInstalled()
             installStates[lang] = nil
-            if activeLang == nil || activeLang == lang {
+            // A newly downloaded dictionary becomes the active one; an update keeps the current choice.
+            if !isUpdate || activeLang == nil || activeLang == lang {
                 activeLang = lang // reopens the database
             }
         } catch {

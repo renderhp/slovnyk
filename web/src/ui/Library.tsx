@@ -74,7 +74,6 @@ function DictionaryRow({ info }: { info: DictionaryInfo }) {
       <div class="dictionary-text">
         <div class="dictionary-name">
           {info.name}
-          {isActive && Object.keys(installed.value).length > 1 && <span class="accent"> ✓</span>}
         </div>
         <div class="caption">{details}</div>
         {state?.kind === 'downloading' && (
@@ -125,8 +124,18 @@ function DictionaryRow({ info }: { info: DictionaryInfo }) {
           >
             Update
           </button>
-        ) : (
+        ) : isActive ? (
           <CheckCircleIcon class="accent" />
+        ) : (
+          <button
+            class="pill-button outline"
+            onClick={(e) => {
+              e.stopPropagation()
+              setActive(info.lang)
+            }}
+          >
+            Use
+          </button>
         ))}
     </div>
   )

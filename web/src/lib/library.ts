@@ -160,7 +160,8 @@ export async function install(info: DictionaryInfo) {
       },
     )
     saveInstalled({ ...installed.value, [info.lang]: { ...info, file } })
-    if (!activeLang.value || activeLang.value === info.lang) await activate(info.lang)
+    // A newly downloaded dictionary becomes the active one; an update keeps the current choice.
+    if (!previous || !activeLang.value || activeLang.value === info.lang) await activate(info.lang)
     if (previous && previous.file !== file) await db.remove(previous.file).catch(() => {})
     setInstallState(info.lang, null)
   } catch (error) {

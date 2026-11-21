@@ -13,14 +13,24 @@ function isCombining(cp: number): boolean {
   return false
 }
 
+/** Separate letters that look like letter + mark (Ukrainian й ї, Russian ё, Belarusian ў). */
+const KEEP_LETTERS = new Set('йЙїЇёЁўЎ')
+
 /**
- * Search key. Must match `normalize()` in pipeline/build.py:
- * NFKD, drop combining marks, lowercase, unify apostrophes, collapse whitespace.
+ * Search key. Must match `normalize()` in pipeline/build.py: NFC; drop combining marks
+ * (stress, accents) from every character except KEEP_LETTERS, using NFKD; lowercase;
+ * unify apostrophes; collapse whitespace.
  */
 export function normalize(input: string): string {
   let stripped = ''
-  for (const ch of input.normalize('NFKD')) {
-    if (!isCombining(ch.codePointAt(0)!)) stripped += ch
+  for (const ch of input.normalize('NFC')) {
+    if (KEEP_LETTERS.has(ch)) {
+      stripped += ch
+      continue
+    }
+    for (const part of ch.normalize('NFKD')) {
+      if (!isCombining(part.codePointAt(0)!)) stripped += part
+    }
   }
   return stripped
     .toLowerCase()

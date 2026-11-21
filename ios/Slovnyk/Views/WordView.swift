@@ -46,7 +46,8 @@ struct WordView: View {
     private var wiktionaryURL: URL? {
         let title = word.replacingOccurrences(of: " ", with: "_")
         guard let encoded = title.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else { return nil }
-        return URL(string: "https://en.wiktionary.org/wiki/\(encoded)#English")
+        let section = (database.meta["lang_name"] ?? "English").replacingOccurrences(of: " ", with: "_")
+        return URL(string: "https://en.wiktionary.org/wiki/\(encoded)#\(section)")
     }
 
     private func load() async {

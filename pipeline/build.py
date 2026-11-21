@@ -68,12 +68,22 @@ def load_languages() -> dict:
     return json.loads(LANGUAGES_FILE.read_text())
 
 
+# Letters that look like a base letter plus a mark but are separate letters of their
+# alphabet (Ukrainian й ї, Russian ё, Belarusian ў). normalize() keeps them intact.
+KEEP_LETTERS = frozenset("йЙїЇёЁўЎ")
+
+
 def normalize(s: str) -> str:
-    """Search key: compatibility-decompose, drop combining marks, lowercase,
-    unify apostrophes, collapse whitespace. The app must apply the same steps."""
-    s = unicodedata.normalize("NFKD", s)
-    s = "".join(c for c in s if not unicodedata.combining(c))
-    s = s.lower().replace("’", "'").replace("‘", "'")
+    """Search key. The apps must apply exactly the same steps:
+    NFC; drop combining marks (stress, accents) from every character except
+    KEEP_LETTERS, using NFKD; lowercase; unify apostrophes; collapse whitespace."""
+    out = []
+    for ch in unicodedata.normalize("NFC", s):
+        if ch in KEEP_LETTERS:
+            out.append(ch)
+        else:
+            out.extend(c for c in unicodedata.normalize("NFKD", ch) if not unicodedata.combining(c))
+    s = "".join(out).lower().replace("\u2019", "'").replace("\u2018", "'")
     return " ".join(s.split())
 
 
@@ -334,7 +344,10 @@ def cmd_manifest(args) -> None:
     dist = Path(args.dist)
     base = args.base_url.rstrip("/")
     dictionaries = []
-    for p in sorted(dist.glob("*.info.json")):
+    order = list(load_languages())  # languages.json order, English first
+    infos = sorted(dist.glob("*.info.json"), key=lambda p: (
+        order.index(p.name.split(".")[0]) if p.name.split(".")[0] in order else len(order), p.name))
+    for p in infos:
         info = json.loads(p.read_text())
         info["url"] = f"{base}/{info['file']}"
         dictionaries.append(info)

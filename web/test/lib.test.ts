@@ -16,6 +16,14 @@ describe('normalize', () => {
     expect(normalize('NAÏVE')).toBe('naive')
   })
 
+  it('keeps separate Cyrillic letters but drops stress marks', () => {
+    expect(normalize('Мій')).toBe('мій')
+    expect(normalize('Їжак')).toBe('їжак')
+    expect(normalize('сло́во')).toBe('слово')
+    expect(normalize('мі\u0306й')).toBe('мій')
+    expect(normalize('niño')).toBe('nino')
+  })
+
   it('matches the pipeline on real headwords', () => {
     const cases: [string, string][] = JSON.parse(fixture('normalize_cases.json').toString())
     expect(cases.length).toBeGreaterThan(1000)

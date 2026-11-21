@@ -78,9 +78,6 @@ private struct DictionaryRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(info.name).font(.body.weight(.semibold))
-                    if isActive && library.installed.count > 1 {
-                        Image(systemName: "checkmark").font(.caption.bold()).foregroundStyle(Theme.accent)
-                    }
                 }
                 Text(details)
                     .font(.caption)
@@ -153,10 +150,14 @@ private struct DictionaryRow: View {
             }
             .buttonStyle(.bordered)
             .buttonBorderShape(.capsule)
-        } else {
+        } else if isActive {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(Theme.accent)
-                .accessibilityLabel("Installed")
+                .accessibilityLabel("In use")
+        } else {
+            Button("Use") { library.activeLang = info.lang }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
         }
     }
 

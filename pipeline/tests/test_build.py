@@ -16,6 +16,14 @@ class NormalizeTest(unittest.TestCase):
         self.assertEqual(build.normalize("  don’t   stop "), "don't stop")
         self.assertEqual(build.normalize("NAÏVE"), "naive")
 
+    def test_keeps_separate_cyrillic_letters(self):
+        self.assertEqual(build.normalize("Мій"), "мій")            # й is not и
+        self.assertEqual(build.normalize("Їжак"), "їжак")          # ї is not і
+        self.assertEqual(build.normalize("сло́во"), "слово")        # stress mark goes
+        self.assertEqual(build.normalize("мі\u0306й"), "мій")      # decomposed й too
+        self.assertEqual(build.normalize("ёлка"), "ёлка")
+        self.assertEqual(build.normalize("niño"), "nino")
+
 
 class SelectExamplesTest(unittest.TestCase):
     def test_skips_quotations_and_caps(self):
