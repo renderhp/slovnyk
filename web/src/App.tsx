@@ -41,6 +41,7 @@ export function App() {
   return (
     <div class="app">
       <NavStack
+        inert={libraryOpen}
         base={
           <SearchScreen onOpenLibrary={() => setLibraryOpen(true)} initialQuery={params.get('search') ?? undefined} />
         }

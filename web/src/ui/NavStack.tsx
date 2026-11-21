@@ -18,7 +18,7 @@ const PARALLAX = 0.3 // the page below sits at -30% while covered
 
 let nextKey = 1
 
-export function NavStack({ base }: { base: ComponentChildren }) {
+export function NavStack({ base, inert = false }: { base: ComponentChildren; inert?: boolean }) {
   const [layers, setLayers] = useState<Layer[]>([])
   const container = useRef<HTMLDivElement>(null)
 
@@ -63,7 +63,7 @@ export function NavStack({ base }: { base: ComponentChildren }) {
 
   return (
     <div class="nav-stack" ref={container}>
-      <div class={`nav-layer${isCovered(-1) ? ' covered' : ''}`} data-depth={0}>
+      <div class={`nav-layer${isCovered(-1) ? ' covered' : ''}`} data-depth={0} inert={inert || isCovered(-1)}>
         {base}
         <div class="nav-dim" />
       </div>
@@ -72,7 +72,8 @@ export function NavStack({ base }: { base: ComponentChildren }) {
           key={layer.key}
           class={`nav-layer page ${layer.phase}${isCovered(i) ? ' covered' : ''}${i === topIndex ? ' top' : ''}`}
           data-depth={i + 1}
-          aria-hidden={i !== topIndex}
+          // inert (not aria-hidden): also unfocusable, and drops focus from a page being popped.
+          inert={inert || i !== topIndex}
         >
           <WordScreen word={layer.word} />
           <div class="nav-dim" />
