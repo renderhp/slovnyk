@@ -6,6 +6,7 @@ struct WordView: View {
 
     @State private var entries: [Entry] = []
     @State private var loaded = false
+    @Environment(RecentWords.self) private var recents
 
     var body: some View {
         ScrollView {
@@ -55,6 +56,13 @@ struct WordView: View {
             try database.entries(for: word)
         }.value) ?? []
         loaded = true
+        if let first = entries.first {
+            var seen = Set<String>()
+            recents.add(RecentWord(
+                word: word,
+                partsOfSpeech: entries.map(\.pos).filter { seen.insert($0).inserted },
+                gloss: first.data.senses.first?.gloss))
+        }
     }
 }
 

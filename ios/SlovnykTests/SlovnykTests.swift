@@ -135,3 +135,58 @@ final class InstallerTests: XCTestCase {
         return result
     }
 }
+
+@MainActor
+final class RecentWordsTests: XCTestCase {
+    private var defaults: UserDefaults!
+
+    override func setUp() {
+        defaults = UserDefaults(suiteName: "RecentWordsTests-\(UUID().uuidString)")
+    }
+
+    private func word(_ w: String) -> RecentWord {
+        RecentWord(word: w, partsOfSpeech: ["noun"], gloss: "gloss of \(w)")
+    }
+
+    func testNewestFirstWithoutDuplicates() {
+        let recents = RecentWords(defaults: defaults)
+        recents.load(lang: "en")
+        recents.add(word("free"))
+        recents.add(word("went"))
+        recents.add(word("free"))
+        XCTAssertEqual(recents.items.map(\.word), ["free", "went"])
+    }
+
+    func testLimit() {
+        let recents = RecentWords(defaults: defaults)
+        recents.load(lang: "en")
+        for i in 0..<(RecentWords.limit + 5) { recents.add(word("w\(i)")) }
+        XCTAssertEqual(recents.items.count, RecentWords.limit)
+        XCTAssertEqual(recents.items.first?.word, "w\(RecentWords.limit + 4)")
+    }
+
+    func testPersistsPerDictionary() {
+        let recents = RecentWords(defaults: defaults)
+        recents.load(lang: "en")
+        recents.add(word("free"))
+        recents.load(lang: "de")
+        XCTAssertEqual(recents.items, [])
+        recents.add(word("frei"))
+
+        let reloaded = RecentWords(defaults: defaults)
+        reloaded.load(lang: "en")
+        XCTAssertEqual(reloaded.items.map(\.word), ["free"])
+        reloaded.load(lang: "de")
+        XCTAssertEqual(reloaded.items.map(\.word), ["frei"])
+    }
+
+    func testRemoveAndClear() {
+        let recents = RecentWords(defaults: defaults)
+        recents.load(lang: "en")
+        ["a", "b", "c"].forEach { recents.add(word($0)) }
+        recents.remove(atOffsets: IndexSet(integer: 1))
+        XCTAssertEqual(recents.items.map(\.word), ["c", "a"])
+        recents.clear()
+        XCTAssertEqual(recents.items, [])
+    }
+}

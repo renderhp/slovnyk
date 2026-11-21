@@ -4,12 +4,14 @@ import SwiftUI
 struct SlovnykApp: App {
     @State private var library = DictionaryLibrary()
     @State private var audio = AudioPlayer()
+    @State private var recents = RecentWords()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(library)
                 .environment(audio)
+                .environment(recents)
                 .preferredColorScheme(.dark)
                 .tint(Theme.accent)
         }

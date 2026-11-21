@@ -18,7 +18,7 @@ python3 pipeline/build.py build en --input data/raw/en.jsonl.gz
 
 ```sh
 python3 web/scripts/prepare-data.py --manifest dist/en.info.json --sqlite-dir dist --out web/public/data
-cd web && npm install && npm run dev
+cd web && npm install && npm run dev   # open http://localhost:5173/?inBrowser=1 to skip the install page
 ```
 
 ## Building the iOS app

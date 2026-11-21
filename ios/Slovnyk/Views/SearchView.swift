@@ -8,7 +8,9 @@ struct SearchView: View {
     let database: DictionaryDatabase
 
     @Environment(DictionaryLibrary.self) private var library
+    @Environment(RecentWords.self) private var recents
     @State private var query = ""
+    @State private var confirmingClear = false
     @State private var results: [SearchResult] = []
     @State private var searchedQuery = ""
     @State private var path = NavigationPath()
@@ -38,13 +40,18 @@ struct SearchView: View {
         }
         .sheet(isPresented: $showingLibrary) { LibrarySheet() }
         .task(id: query) { await runSearch() }
+        .task(id: library.activeLang) { recents.load(lang: library.activeLang) }
         .onAppear(perform: applyLaunchOptions)
     }
 
     @ViewBuilder
     private var content: some View {
         if query.trimmingCharacters(in: .whitespaces).isEmpty {
-            EmptySearchView(info: library.activeInfo)
+            if recents.items.isEmpty {
+                EmptySearchView(info: library.activeInfo)
+            } else {
+                recentList
+            }
         } else if results.isEmpty && searchedQuery == query {
             ContentUnavailableView.search(text: query)
         } else {
@@ -55,6 +62,34 @@ struct SearchView: View {
             }
             .listStyle(.plain)
             .scrollDismissesKeyboard(.immediately)
+        }
+    }
+
+    private var recentList: some View {
+        List {
+            Section {
+                ForEach(recents.items) { recent in
+                    NavigationLink(value: WordRoute(word: recent.word)) {
+                        SearchResultRow(result: recent.asSearchResult)
+                    }
+                }
+                .onDelete { recents.remove(atOffsets: $0) }
+            } header: {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Recent")
+                        .font(.title3.bold())
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Button("Clear") { confirmingClear = true }
+                        .font(.body)
+                }
+                .textCase(nil)
+            }
+        }
+        .listStyle(.plain)
+        .scrollDismissesKeyboard(.immediately)
+        .confirmationDialog("Clear recent words?", isPresented: $confirmingClear, titleVisibility: .visible) {
+            Button("Clear All", role: .destructive) { recents.clear() }
         }
     }
 
