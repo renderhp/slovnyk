@@ -1,5 +1,5 @@
 // iOS-style navigation: pages slide in from the right over a dimmed, parallaxed page
-// below, and can be swiped back from the left edge.
+// below, and can be swiped back from anywhere on the page (like iOS 26).
 import type { ComponentChildren } from 'preact'
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks'
 import { back, lastPopMode, stack } from '../lib/nav'
@@ -13,7 +13,7 @@ interface Layer {
 }
 
 const DURATION = 380 // ms, matches --nav-duration in CSS
-const EDGE = 28 // px from the left edge where a back swipe can start
+const SLOP = 10 // px of movement before deciding between a back swipe and scrolling
 const PARALLAX = 0.3 // the page below sits at -30% while covered
 
 let nextKey = 1
@@ -82,7 +82,11 @@ export function NavStack({ base }: { base: ComponentChildren }) {
   )
 }
 
-/** Interactive edge swipe on the top page. Moves elements directly for 60fps tracking. */
+/**
+ * Interactive back swipe on the top page, starting anywhere. It only takes over once the
+ * finger moves clearly rightward; vertical movement is left to scrolling.
+ * Moves elements directly for 60fps tracking.
+ */
 function useSwipeBack(container: { current: HTMLDivElement | null }) {
   useEffect(() => {
     const root = container.current
@@ -122,8 +126,6 @@ function useSwipeBack(container: { current: HTMLDivElement | null }) {
       const touch = e.touches[0]
       const candidate = root.querySelector<HTMLElement>(':scope > .nav-layer.page.top.idle')
       if (e.touches.length !== 1 || !candidate) return
-      const left = root.getBoundingClientRect().left
-      if (touch.clientX - left > EDGE) return
       top = candidate
       below = top.previousElementSibling as HTMLElement | null
       startX = touch.clientX
@@ -138,9 +140,11 @@ function useSwipeBack(container: { current: HTMLDivElement | null }) {
       const dx = touch.clientX - startX
       const dy = touch.clientY - startY
       if (!dragging) {
-        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) return void (top = below = null)
-        if (dx < 8) return
+        if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return
+        // Vertical or leftward: not ours. Let the page scroll.
+        if (dx <= 0 || Math.abs(dy) * 1.2 > dx) return void (top = below = null)
         dragging = true
+        startX = touch.clientX // start tracking from here so the page doesn't jump
         root.classList.add('swiping')
       }
       e.preventDefault()
