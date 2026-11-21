@@ -292,6 +292,7 @@ a {
 .results li + li::before {
   content: '';
   position: absolute;
+  z-index: 1;
   top: 0;
   left: 16px;
   right: 0;
@@ -380,6 +381,99 @@ a {
 .empty-subtitle {
   font-size: 13px;
   color: var(--secondary);
+}
+
+/* ---------- Recents & swipe-to-delete ---------- */
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 16px 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.list-header .text-button {
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.swipe-row {
+  position: relative;
+  overflow: hidden;
+  transition: height 0.25s var(--nav-curve);
+}
+
+/* Separators belong to the sliding content, not the red action behind it. */
+.results .swipe-row::before {
+  display: none;
+}
+
+.swipe-row + .swipe-row .swipe-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 0;
+  border-top: 0.5px solid var(--separator);
+}
+
+.swipe-action {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  /* Text stays centred in the revealed area while it's narrow, then pins right. */
+  padding-right: max(16px, calc((var(--reveal, 0) * 1px - 60px) / 2));
+  background: var(--danger);
+  color: #fff;
+  font-size: 17px;
+}
+
+.swipe-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  transition: transform 0.3s var(--nav-curve);
+  cursor: pointer;
+}
+
+.swipe-content .result-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.swipe-row:not(.swiping) .swipe-content:active .result-row {
+  background: var(--card-pressed);
+  transition-duration: 0s;
+}
+
+.row-remove {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .row-remove {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 12px;
+    border-radius: 50%;
+    color: var(--secondary);
+    font-size: 20px;
+    opacity: 0;
+  }
+  .swipe-content:hover .row-remove {
+    opacity: 1;
+  }
+  .row-remove:hover {
+    background: var(--card-pressed);
+    color: var(--text);
+  }
 }
 
 /* ---------- Word page ---------- */

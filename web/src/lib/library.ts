@@ -1,6 +1,7 @@
 // Available/installed dictionaries and the active one (mirrors DictionaryLibrary.swift).
 import { computed, signal } from '@preact/signals'
 import { db } from './db'
+import { loadRecents } from './recents'
 
 export interface DictionaryInfo {
   lang: string
@@ -72,6 +73,7 @@ function saveInstalled(value: Record<string, InstalledDictionary>) {
 
 async function activate(lang: string | null) {
   activeLang.value = lang
+  loadRecents(lang)
   activeMeta.value = null
   if (lang) localStorage.setItem(ACTIVE_KEY, lang)
   else localStorage.removeItem(ACTIVE_KEY)

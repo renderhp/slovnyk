@@ -3,6 +3,8 @@ import { db } from '../lib/db'
 import { activeInfo } from '../lib/library'
 import { posName, type SearchResult } from '../lib/model'
 import { pushWord } from '../lib/nav'
+import { clearRecents, recents, removeRecent, type Recent } from '../lib/recents'
+import { closeSwipeRows, SwipeRow } from './SwipeRow'
 import { BookIcon, BooksIcon, ChevronIcon, ClearIcon, SearchIcon } from './icons'
 import { compactNumber } from './format'
 
@@ -84,8 +86,10 @@ export function SearchScreen({ onOpenLibrary, initialQuery }: { onOpenLibrary: (
         )}
       </form>
 
-      <div class="scroll" onTouchStart={() => input.current?.blur()}>
-        {empty ? (
+      <div class="scroll" onTouchStart={() => input.current?.blur()} onScroll={closeSwipeRows}>
+        {empty && recents.value.length > 0 ? (
+          <RecentList />
+        ) : empty ? (
           <div class="empty-state">
             <BookIcon class="accent" />
             <div class="empty-title">Look up a word</div>
@@ -106,21 +110,65 @@ export function SearchScreen({ onOpenLibrary, initialQuery }: { onOpenLibrary: (
             {results.map((result) => (
               <li key={result.word}>
                 <button class="result-row" onClick={() => pushWord(result.word)}>
-                  <div class="result-text">
-                    <div class="result-line">
-                      <span class="result-word">{result.word}</span>
-                      <span class="result-pos">{result.partsOfSpeech.map(posName).join(' · ')}</span>
-                    </div>
-                    {result.matchedForm && <div class="result-form">form: {result.matchedForm}</div>}
-                    {result.gloss && <div class="result-gloss">{result.gloss}</div>}
-                  </div>
-                  <ChevronIcon class="chevron" />
+                  <ResultContent {...result} />
                 </button>
               </li>
             ))}
           </ul>
         )}
       </div>
+    </div>
+  )
+}
+
+function ResultContent({ word, partsOfSpeech, gloss, matchedForm }: Recent & { matchedForm?: string | null }) {
+  return (
+    <>
+      <div class="result-text">
+        <div class="result-line">
+          <span class="result-word">{word}</span>
+          <span class="result-pos">{partsOfSpeech.map(posName).join(' · ')}</span>
+        </div>
+        {matchedForm && <div class="result-form">form: {matchedForm}</div>}
+        {gloss && <div class="result-gloss">{gloss}</div>}
+      </div>
+      <ChevronIcon class="chevron" />
+    </>
+  )
+}
+
+function RecentList() {
+  const [confirming, setConfirming] = useState(false)
+  useEffect(() => {
+    if (!confirming) return
+    const timer = setTimeout(() => setConfirming(false), 3000)
+    return () => clearTimeout(timer)
+  }, [confirming])
+
+  return (
+    <div class="recents">
+      <div class="list-header">
+        <span>Recent</span>
+        <button
+          class={`text-button${confirming ? ' danger' : ''}`}
+          onClick={() => {
+            if (!confirming) return setConfirming(true)
+            setConfirming(false)
+            clearRecents()
+          }}
+        >
+          {confirming ? 'Clear All' : 'Clear'}
+        </button>
+      </div>
+      <ul class="results">
+        {recents.value.map((recent) => (
+          <SwipeRow key={recent.word} onTap={() => pushWord(recent.word)} onDelete={() => removeRecent(recent.word)}>
+            <div class="result-row">
+              <ResultContent {...recent} />
+            </div>
+          </SwipeRow>
+        ))}
+      </ul>
     </div>
   )
 }

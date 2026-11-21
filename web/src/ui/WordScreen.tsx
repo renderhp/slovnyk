@@ -1,7 +1,17 @@
 import { useEffect, useState } from 'preact/hooks'
 import { failedUrl, play, playingUrl, stop } from '../lib/audio'
 import { db } from '../lib/db'
-import { accentLabel, displayIPA, outline, posName, senseTargets, type Entry, type OutlineItem } from '../lib/model'
+import {
+  accentLabel,
+  displayIPA,
+  outline,
+  posName,
+  senseGloss,
+  senseTargets,
+  type Entry,
+  type OutlineItem,
+} from '../lib/model'
+import { addRecent } from '../lib/recents'
 import { back, pushWord } from '../lib/nav'
 import { BackIcon, LinkArrowIcon, PlayIcon, SpeakerIcon, TurnRightIcon, WarningIcon } from './icons'
 
@@ -12,7 +22,17 @@ export function WordScreen({ word }: { word: string }) {
     let cancelled = false
     setEntries(null)
     db.entries(word)
-      .then((result) => !cancelled && setEntries(result))
+      .then((result) => {
+        if (cancelled) return
+        setEntries(result)
+        if (result.length) {
+          addRecent({
+            word,
+            partsOfSpeech: [...new Set(result.map((e) => e.pos))],
+            gloss: result[0].data.senses[0] ? senseGloss(result[0].data.senses[0]) : null,
+          })
+        }
+      })
       .catch(() => !cancelled && setEntries([]))
     return () => {
       cancelled = true
