@@ -102,7 +102,7 @@ a {
 
 /* Like UITableView's alwaysBounceVertical: content is always a pixel taller than the
    scroll area, so iOS rubber-bands even short lists and empty states. */
-.scroll > * {
+.scroll > :only-child {
   min-height: calc(100% + 1px);
 }
 

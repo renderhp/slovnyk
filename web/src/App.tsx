@@ -62,17 +62,19 @@ function Onboarding() {
   return (
     <div class="app">
       <div class="screen">
-        <div class="scroll onboarding">
-          <div class="onboarding-hero">
-            <h1 class="onboarding-title">Slovnyk</h1>
-            <p class="onboarding-subtitle">
-              An offline dictionary built on Wiktionary.
-              <br />
-              Download a dictionary to get started.
-            </p>
+        <div class="scroll">
+          <div class="onboarding">
+            <div class="onboarding-hero">
+              <h1 class="onboarding-title">Slovnyk</h1>
+              <p class="onboarding-subtitle">
+                An offline dictionary built on Wiktionary.
+                <br />
+                Download a dictionary to get started.
+              </p>
+            </div>
+            {startupError.value && <div class="banner-error">{startupError.value}</div>}
+            <LibraryList onAbout={() => setAbout(true)} />
           </div>
-          {startupError.value && <div class="banner-error">{startupError.value}</div>}
-          <LibraryList onAbout={() => setAbout(true)} />
         </div>
       </div>
     </div>
