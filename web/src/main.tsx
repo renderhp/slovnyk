@@ -15,6 +15,11 @@ if (params.has('inBrowser')) allowBrowserUse() // for testing in a regular tab
 
 const root = document.getElementById('app')!
 
+// Dev only: outline the app and show viewport numbers when running as an installed app.
+if (import.meta.env.DEV && isStandalone()) {
+  import('./dev/layout-debug').then((m) => m.showLayoutDebug())
+}
+
 if (isStandalone() || browserUseAllowed()) {
   startNavigation(params.get('word'))
   startup()
