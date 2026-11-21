@@ -1,0 +1,26 @@
+{
+  "name": "slovnyk-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "icons": "swift ../ios/scripts/make-icon.swift ribbon public/icon-1024.png && sips -z 512 512 public/icon-1024.png --out public/icon-512.png && sips -z 192 192 public/icon-1024.png --out public/icon-192.png && sips -z 180 180 public/icon-1024.png --out public/apple-touch-icon.png && rm public/icon-1024.png"
+  },
+  "dependencies": {
+    "@preact/signals": "^2.11.4",
+    "@sqlite.org/sqlite-wasm": "^3.54.1-build1",
+    "preact": "^11.2.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^4.1.12"
+  }
+}
