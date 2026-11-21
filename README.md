@@ -1,6 +1,7 @@
 # Slovnyk
 
-An offline dictionary app for iOS, built on Wiktionary.
+An offline dictionary built on Wiktionary: a web app you install to your home screen
+(**https://renderhp.github.io/slovnyk/**), plus a native iOS app.
 
 - **Data:** [Wiktionary](https://www.wiktionary.org), via the [Wiktextract](https://github.com/tatuylonen/wiktextract) extracts published on [kaikki.org](https://kaikki.org).
 - **Dictionaries:** built monthly into SQLite files by `pipeline/` and published as [GitHub releases](../../releases). The app downloads the language you pick.
@@ -13,7 +14,14 @@ python3 pipeline/build.py download en
 python3 pipeline/build.py build en --input data/raw/en.jsonl.gz
 ```
 
-## Building the app
+## Running the web app
+
+```sh
+python3 web/scripts/prepare-data.py --manifest dist/en.info.json --sqlite-dir dist --out web/public/data
+cd web && npm install && npm run dev
+```
+
+## Building the iOS app
 
 ```sh
 brew install xcodegen

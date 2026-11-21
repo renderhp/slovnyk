@@ -1,6 +1,7 @@
 // A navigation stack of word pages on top of the search screen, synced with browser
 // history so the browser's back button / gesture works too.
 import { signal } from '@preact/signals'
+import { isStandalone } from './platform'
 
 export const stack = signal<string[]>([])
 
@@ -10,10 +11,8 @@ export let lastPopMode: PopMode = 'animated'
 
 let pendingPopMode: PopMode | null = null
 
-/** In a regular iOS Safari tab the browser animates its own back swipe. */
-const isStandalone =
-  matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true
-const browserAnimatesBack = !isStandalone && matchMedia('(pointer: coarse)').matches
+/** In a regular mobile browser tab the browser animates its own back swipe. */
+const browserAnimatesBack = !isStandalone() && matchMedia('(pointer: coarse)').matches
 
 const wordHash = (word: string) => `#/word/${encodeURIComponent(word)}`
 

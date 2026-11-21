@@ -860,6 +860,123 @@ a.row:active {
   font-size: 14px;
 }
 
+/* ---------- Install page ---------- */
+
+.install {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 56px 20px 32px;
+  text-align: center;
+}
+
+.install-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 30px rgba(245, 186, 107, 0.12), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+}
+
+.install-card {
+  width: 100%;
+  max-width: 440px;
+  margin-top: 32px;
+  padding: 22px 22px;
+  border-radius: 26px;
+  background: var(--card);
+  text-align: left;
+}
+
+.install-card.center {
+  display: flex;
+  justify-content: center;
+}
+
+.install-done {
+  margin: 0;
+  text-align: center;
+  color: var(--accent);
+}
+
+.install-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  line-height: 1.4;
+}
+
+.install-steps li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.install-steps b {
+  font-weight: 600;
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-top: -1px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.inline-icon {
+  display: inline-block;
+  vertical-align: -3px;
+  margin-left: 2px;
+  color: var(--accent);
+}
+
+.install-notes {
+  width: 100%;
+  max-width: 440px;
+  margin: 22px 0 0;
+  padding: 0 8px;
+  list-style: none;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--secondary);
+}
+
+.install-notes li {
+  position: relative;
+  padding-left: 16px;
+  margin-bottom: 8px;
+}
+
+.install-notes li::before {
+  content: '·';
+  position: absolute;
+  left: 4px;
+  color: var(--tertiary);
+}
+
+.install-skip {
+  align-self: center;
+  margin-top: 20px;
+  font-size: 15px;
+}
+
+.pill-button.big {
+  padding: 13px 28px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
 /* ---------- Sheet ---------- */
 
 .sheet-backdrop {

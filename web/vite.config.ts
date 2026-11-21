@@ -13,6 +13,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['apple-touch-icon.png', 'icon-192.png'],
       manifest: {
+        id: './',
         name: 'Slovnyk',
         short_name: 'Slovnyk',
         description: 'An offline dictionary built on Wiktionary.',
