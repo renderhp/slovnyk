@@ -25,7 +25,7 @@ export function WordScreen({ word }: { word: string }) {
     <div class="screen word-screen">
       <header class="topbar">
         <div class="topbar-side">
-          <button class="circle-button" aria-label="Back" onClick={back}>
+          <button class="circle-button" aria-label="Back" onClick={() => back()}>
             <BackIcon />
           </button>
         </div>
@@ -92,7 +92,7 @@ function AudioButton({ url, label }: { url: string; label: string }) {
   const playing = playingUrl.value === url
   const failed = failedUrl.value === url
   return (
-    <button class="audio-button" onClick={() => (playing ? stop() : play(url))}>
+    <button class={`audio-button${playing ? ' playing' : ''}`} onClick={() => (playing ? stop() : play(url))}>
       {failed ? <WarningIcon /> : playing ? <SpeakerIcon /> : <PlayIcon />}
       <span>{label}</span>
     </button>

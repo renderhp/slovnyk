@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'preact/hooks'
 import { activeMeta, available, install, installed, loadManifest, ready, startupError, waitingForOtherTab } from './lib/library'
-import { stack } from './lib/nav'
 import { AboutPage, LibraryList, LibrarySheet } from './ui/Library'
 import { SearchScreen } from './ui/SearchScreen'
-import { WordScreen } from './ui/WordScreen'
+import { NavStack } from './ui/NavStack'
 
 /** Debug options via the URL, e.g. ?search=went, ?word=go, ?autoInstall=en, ?library=1 */
 export const params = new URLSearchParams(location.search)
@@ -41,12 +40,11 @@ export function App() {
 
   return (
     <div class="app">
-      <SearchScreen onOpenLibrary={() => setLibraryOpen(true)} initialQuery={params.get('search') ?? undefined} />
-      {stack.value.map((word, i) => (
-        <div class="layer" key={`${i}:${word}`} style={{ zIndex: i + 1 }}>
-          <WordScreen word={word} />
-        </div>
-      ))}
+      <NavStack
+        base={
+          <SearchScreen onOpenLibrary={() => setLibraryOpen(true)} initialQuery={params.get('search') ?? undefined} />
+        }
+      />
       {libraryOpen && <LibrarySheet onClose={() => setLibraryOpen(false)} />}
     </div>
   )

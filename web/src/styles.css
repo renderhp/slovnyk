@@ -16,6 +16,9 @@
   --serif: ui-serif, 'New York', 'Iowan Old Style', Georgia, serif;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-duration: 380ms;
+  --nav-curve: cubic-bezier(0.32, 0.72, 0, 1);
+  --nav-parallax: 30%;
   color-scheme: dark;
 }
 
@@ -36,6 +39,15 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+input {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 button {
@@ -87,17 +99,54 @@ a {
   padding-bottom: calc(var(--safe-bottom) + 24px);
 }
 
-.layer {
+/* ---------- Navigation stack ---------- */
+
+.nav-stack {
   position: absolute;
   inset: 0;
-  animation: push 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: -12px 0 24px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
 }
 
-@keyframes push {
-  from {
-    transform: translateX(100%);
-  }
+.nav-layer {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(0, 0, 0);
+  transition: transform var(--nav-duration) var(--nav-curve);
+}
+
+.nav-layer.page {
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.55);
+}
+
+.nav-layer.enter,
+.nav-layer.exit {
+  transform: translate3d(100%, 0, 0);
+}
+
+.nav-layer.exit {
+  pointer-events: none;
+}
+
+.nav-layer.covered {
+  transform: translate3d(calc(-1 * var(--nav-parallax)), 0, 0);
+  pointer-events: none;
+}
+
+.nav-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--nav-duration) var(--nav-curve);
+}
+
+.nav-layer.covered > .nav-dim {
+  opacity: 1;
+}
+
+.nav-stack.swiping .nav-layer {
+  will-change: transform;
 }
 
 /* ---------- Top bar ---------- */
@@ -143,9 +192,26 @@ a {
   color: var(--text);
 }
 
+.circle-button,
+.done-button,
+.pill-button,
+.audio-button,
+.target-link {
+  transition: transform 0.2s var(--nav-curve), opacity 0.2s ease;
+}
+
 .circle-button:active,
-.done-button:active {
-  opacity: 0.6;
+.done-button:active,
+.pill-button:active,
+.audio-button:active {
+  transform: scale(0.92);
+  opacity: 0.75;
+  transition-duration: 0s;
+}
+
+.target-link:active {
+  opacity: 0.5;
+  transition-duration: 0s;
 }
 
 .done-button {
@@ -211,12 +277,18 @@ a {
   padding: 0;
 }
 
-.results li + li .result-row {
-  border-top: 0.5px solid var(--separator);
+.results li {
+  position: relative;
 }
 
-.results li {
-  padding: 0 16px;
+/* Inset separators like UITableView. */
+.results li + li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 0;
+  border-top: 0.5px solid var(--separator);
 }
 
 .result-row {
@@ -224,12 +296,14 @@ a {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 11px 0;
+  padding: 11px 16px;
   text-align: left;
+  transition: background-color 0.35s ease;
 }
 
 .result-row:active {
-  opacity: 0.6;
+  background: var(--card-pressed);
+  transition-duration: 0s;
 }
 
 .result-text {
@@ -310,8 +384,27 @@ a {
   display: flex;
   flex-direction: column;
   gap: 28px;
-  user-select: text;
+}
+
+.word-page .headword,
+.word-page .ipa,
+.word-page .gloss,
+.word-page .example {
   -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+.pronunciation,
+.entry {
+  animation: fade-up 0.3s var(--nav-curve) both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 
 .headword {
@@ -516,9 +609,15 @@ a {
   justify-content: space-between;
 }
 
+.link-row,
+a.row {
+  transition: background-color 0.35s ease;
+}
+
 .link-row:active,
 a.row:active {
   background: var(--card-pressed);
+  transition-duration: 0s;
 }
 
 .dictionary-row {
@@ -587,9 +686,7 @@ a.row:active {
   color: var(--accent);
 }
 
-.pill-button:active {
-  opacity: 0.7;
-}
+
 
 .text-button {
   color: var(--accent);
@@ -686,9 +783,34 @@ a.row:active {
   animation: rise 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+.sheet {
+  transition: transform 0.32s var(--nav-curve);
+}
+
+.sheet.closing {
+  transform: translate3d(0, 100%, 0);
+}
+
+.sheet-backdrop.closing {
+  opacity: 0;
+  transition: opacity 0.32s ease;
+}
+
+.sheet-grabber {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 36px;
+  height: 5px;
+  margin-left: -18px;
+  border-radius: 3px;
+  background: rgba(235, 235, 245, 0.3);
+  z-index: 1;
+}
+
 .sheet .screen {
   background: transparent;
-  padding-top: 8px;
+  padding-top: 12px;
 }
 
 .sheet .group {
@@ -725,4 +847,25 @@ a.row:active {
   white-space: nowrap;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
   animation: fade 0.2s ease;
+}
+
+.audio-button.playing svg {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --nav-duration: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+  }
 }

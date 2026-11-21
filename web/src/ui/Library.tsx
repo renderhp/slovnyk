@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import {
   activeLang,
   activeMeta,
@@ -213,12 +213,88 @@ export function AboutPage({ onBack }: { onBack: () => void }) {
   )
 }
 
-/** The dictionaries sheet shown from the search screen. */
+/** The dictionaries sheet shown from the search screen. Drag down or tap outside to dismiss. */
 export function LibrarySheet({ onClose }: { onClose: () => void }) {
   const [about, setAbout] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const sheet = useRef<HTMLDivElement>(null)
+
+  const close = () => {
+    if (closing) return
+    setClosing(true)
+    setTimeout(onClose, 320)
+  }
+
+  // Drag the sheet down by its header (or anywhere while the list is scrolled to the top).
+  useEffect(() => {
+    const el = sheet.current
+    if (!el) return
+    let startY = 0
+    let lastY = 0
+    let lastT = 0
+    let velocity = 0
+    let tracking = false
+    let dragging = false
+
+    const scroller = () => el.querySelector<HTMLElement>('.scroll')
+    const onStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement
+      const inHeader = !!target.closest('.topbar, .sheet-grabber')
+      const atTop = (scroller()?.scrollTop ?? 0) <= 0
+      if (!inHeader && !atTop) return
+      if (target.closest('button, a, input')) return
+      tracking = true
+      dragging = false
+      startY = lastY = e.touches[0].clientY
+      lastT = e.timeStamp
+    }
+    const onMove = (e: TouchEvent) => {
+      if (!tracking) return
+      const y = e.touches[0].clientY
+      const dy = y - startY
+      if (!dragging) {
+        if (dy < 6) {
+          if (dy < -6) tracking = false
+          return
+        }
+        dragging = true
+      }
+      e.preventDefault()
+      velocity = (y - lastY) / Math.max(e.timeStamp - lastT, 1)
+      lastY = y
+      lastT = e.timeStamp
+      el.style.transition = 'none'
+      el.style.transform = `translate3d(0, ${Math.max(dy, 0)}px, 0)`
+    }
+    const onEnd = () => {
+      if (!tracking) return
+      tracking = false
+      if (!dragging) return
+      const dy = lastY - startY
+      el.style.transition = ''
+      if (dy > el.clientHeight * 0.25 || velocity > 0.5) {
+        el.style.transform = 'translate3d(0, 100%, 0)'
+        close()
+      } else {
+        el.style.transform = ''
+      }
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd)
+    el.addEventListener('touchcancel', onEnd)
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+      el.removeEventListener('touchcancel', onEnd)
+    }
+  }, [])
+
   return (
-    <div class="sheet-backdrop" onClick={onClose}>
-      <div class="sheet" onClick={(e) => e.stopPropagation()}>
+    <div class={`sheet-backdrop${closing ? ' closing' : ''}`} onClick={close}>
+      <div class={`sheet${closing ? ' closing' : ''}`} ref={sheet} onClick={(e) => e.stopPropagation()}>
+        <div class="sheet-grabber" />
         {about ? (
           <AboutPage onBack={() => setAbout(false)} />
         ) : (
@@ -227,7 +303,7 @@ export function LibrarySheet({ onClose }: { onClose: () => void }) {
               <div class="topbar-side" />
               <h1 class="topbar-title">Dictionaries</h1>
               <div class="topbar-side right">
-                <button class="done-button" onClick={onClose}>
+                <button class="done-button" onClick={close}>
                   Done
                 </button>
               </div>
