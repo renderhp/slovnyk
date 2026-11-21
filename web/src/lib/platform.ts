@@ -47,21 +47,3 @@ export async function promptInstall(): Promise<boolean> {
   return (await event.userChoice).outcome === 'accepted'
 }
 
-/**
- * iOS home-screen apps with a translucent status bar lay the page out under the status
- * bar but size it as if the bar took space, so full-height layouts end ~60pt above the
- * bottom of the screen. There the app always fills the screen, so size it from the screen.
- */
-export function fitToScreen() {
-  if (!isIOS || !isStandalone()) return
-  const update = () => {
-    const portrait = matchMedia('(orientation: portrait)').matches
-    const long = Math.max(screen.width, screen.height)
-    const short = Math.min(screen.width, screen.height)
-    const height = Math.max(window.innerHeight, portrait ? long : short)
-    document.documentElement.style.setProperty('--app-height', `${height}px`)
-  }
-  update()
-  addEventListener('resize', update)
-  addEventListener('orientationchange', () => setTimeout(update, 300))
-}
