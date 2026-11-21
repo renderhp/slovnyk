@@ -4,7 +4,16 @@ export type WorkerRequest = { id: number } & (
   | { type: 'close' }
   | { type: 'search'; text: string }
   | { type: 'entries'; word: string }
-  | { type: 'install'; file: string; parts: string[]; total: number; uncompressedSize: number }
+  | {
+      type: 'install'
+      file: string
+      lang: string
+      buildDate: string
+      parts: string[]
+      total: number
+      uncompressedSize: number
+    }
+  | { type: 'verify'; file: string; lang: string; buildDate: string; uncompressedSize: number }
   | { type: 'remove'; file: string }
 )
 

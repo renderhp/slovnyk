@@ -18,9 +18,12 @@ export interface DictionaryInfo {
 export interface InstalledDictionary extends DictionaryInfo {
   /** File name inside the OPFS pool. */
   file: string
+  /** Passed verify() since it was stored. Older installs are checked once at startup. */
+  verified?: boolean
 }
 
 export type InstallState =
+  | { kind: 'queued' }
   | { kind: 'downloading'; fraction: number }
   | { kind: 'installing' }
   | { kind: 'failed'; message: string }
@@ -40,6 +43,8 @@ export const activeMeta = signal<Record<string, string> | null>(null)
 /** True once storage is set up and the active dictionary (if any) is open. */
 export const ready = signal(false)
 export const startupError = signal<string | null>(null)
+/** Checking stored dictionaries at startup (only for ones never verified). */
+export const checking = signal(false)
 /** Another tab has the dictionaries open; we continue automatically once it closes. */
 export const waitingForOtherTab = signal(false)
 
@@ -93,8 +98,10 @@ export async function startup() {
     // Forget dictionaries whose files are gone (e.g. storage was cleared).
     const present = Object.fromEntries(Object.entries(installed.value).filter(([, d]) => files.has(d.file)))
     saveInstalled(present)
+    await repairDamaged()
     const stored = localStorage.getItem(ACTIVE_KEY)
-    const lang = stored && present[stored] ? stored : Object.keys(present).sort()[0] ?? null
+    const remaining = installed.value
+    const lang = stored && remaining[stored] ? stored : Object.keys(remaining).sort()[0] ?? null
     try {
       await activate(lang)
     } catch (error) {
@@ -105,6 +112,39 @@ export async function startup() {
       'This browser can’t store dictionaries offline. ' + (error instanceof Error ? error.message : String(error))
   } finally {
     ready.value = true
+  }
+}
+
+const verifyInfo = (d: DictionaryInfo) => ({
+  lang: d.lang,
+  buildDate: d.build_date,
+  uncompressedSize: d.uncompressed_size,
+})
+
+/**
+ * Checks dictionaries that were never verified (installed by older versions, which could
+ * corrupt each other when downloaded at the same time). Damaged ones are removed and
+ * marked so the user can download them again.
+ */
+async function repairDamaged() {
+  const unchecked = Object.values(installed.value).filter((d) => !d.verified)
+  if (!unchecked.length) return
+  checking.value = true
+  try {
+    for (const info of unchecked) {
+      const problem = await db.verify(info.file, verifyInfo(info)).catch((e) => String(e))
+      const next = { ...installed.value }
+      if (problem) {
+        delete next[info.lang]
+        await db.remove(info.file).catch(() => {})
+        setInstallState(info.lang, { kind: 'failed', message: 'This dictionary was damaged. Please download it again.' })
+      } else {
+        next[info.lang] = { ...info, verified: true }
+      }
+      saveInstalled(next)
+    }
+  } finally {
+    checking.value = false
   }
 }
 
@@ -138,28 +178,40 @@ function setInstallState(lang: string, state: InstallState | null) {
   installStates.value = next
 }
 
+/** Installs, updates and removals run one at a time, in the order they were requested. */
+let queue: Promise<unknown> = Promise.resolve()
+function enqueue<T>(task: () => Promise<T>): Promise<T> {
+  const run = queue.then(task, task)
+  queue = run.catch(() => {})
+  return run
+}
+
 export async function install(info: DictionaryInfo) {
   const state = installStates.value[info.lang]
   if (state && state.kind !== 'failed') return
-  setInstallState(info.lang, { kind: 'downloading', fraction: 0 })
+  setInstallState(info.lang, { kind: 'queued' })
   // Ask the browser not to evict our storage under pressure.
   navigator.storage?.persist?.().catch(() => {})
+  await enqueue(() => installNow(info))
+}
 
+async function installNow(info: DictionaryInfo) {
+  setInstallState(info.lang, { kind: 'downloading', fraction: 0 })
   const previous = installed.value[info.lang]
   const file = `/${info.lang}-${info.build_date.replace(/[^0-9]/g, '')}.sqlite`
   const base = new URL('data/', document.baseURI)
   try {
     await db.install(
       file,
+      verifyInfo(info),
       info.parts.map((p) => new URL(p.file, base).href),
       info.size,
-      info.uncompressed_size,
       (loaded, total) => {
         const fraction = total ? loaded / total : 0
         setInstallState(info.lang, fraction >= 1 ? { kind: 'installing' } : { kind: 'downloading', fraction })
       },
     )
-    saveInstalled({ ...installed.value, [info.lang]: { ...info, file } })
+    saveInstalled({ ...installed.value, [info.lang]: { ...info, file, verified: true } })
     // A newly downloaded dictionary becomes the active one; an update keeps the current choice.
     if (!previous || !activeLang.value || activeLang.value === info.lang) await activate(info.lang)
     if (previous && previous.file !== file) await db.remove(previous.file).catch(() => {})
@@ -176,7 +228,11 @@ function describeError(error: unknown): string {
   return message
 }
 
-export async function remove(lang: string) {
+export function remove(lang: string) {
+  return enqueue(() => removeNow(lang))
+}
+
+async function removeNow(lang: string) {
   const info = installed.value[lang]
   if (!info) return
   const next = { ...installed.value }

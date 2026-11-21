@@ -84,6 +84,7 @@ function DictionaryRow({ info }: { info: DictionaryInfo }) {
             </div>
           </div>
         )}
+        {state?.kind === 'queued' && <div class="caption queued">Waiting…</div>}
         {state?.kind === 'installing' && (
           <div class="installing">
             <span class="spinner small" /> <span class="caption">Installing…</span>

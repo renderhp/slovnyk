@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'preact/hooks'
-import { activeMeta, available, install, installed, loadManifest, ready, startupError, waitingForOtherTab } from './lib/library'
+import {
+  activeMeta,
+  available,
+  checking,
+  install,
+  installed,
+  loadManifest,
+  ready,
+  startupError,
+  waitingForOtherTab,
+} from './lib/library'
 import { AboutPage, LibraryList, LibrarySheet } from './ui/Library'
 import { SearchScreen } from './ui/SearchScreen'
 import { NavStack } from './ui/NavStack'
@@ -22,6 +32,12 @@ export function App() {
   if (!ready.value) {
     return (
       <div class="app">
+        {checking.value && (
+          <div class="screen center-message">
+            <span class="spinner" />
+            <p class="onboarding-subtitle">Checking dictionaries…</p>
+          </div>
+        )}
         {waitingForOtherTab.value && (
           <div class="screen center-message">
             <h1 class="onboarding-title">Slovnyk</h1>

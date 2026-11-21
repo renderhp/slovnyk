@@ -41,10 +41,13 @@ export const db = {
   entries: (word: string) => call<Entry[]>({ type: 'entries', word }),
   install: (
     file: string,
+    info: { lang: string; buildDate: string; uncompressedSize: number },
     parts: string[],
     total: number,
-    uncompressedSize: number,
     onProgress: (loaded: number, total: number) => void,
-  ) => call<void>({ type: 'install', file, parts, total, uncompressedSize }, { onProgress }),
+  ) => call<void>({ type: 'install', file, ...info, parts, total }, { onProgress }),
+  /** Returns a description of the problem, or null if the stored dictionary is intact. */
+  verify: (file: string, info: { lang: string; buildDate: string; uncompressedSize: number }) =>
+    call<string | null>({ type: 'verify', file, ...info }),
   remove: (file: string) => call<void>({ type: 'remove', file }),
 }

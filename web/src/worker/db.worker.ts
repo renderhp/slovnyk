@@ -93,8 +93,55 @@ function close() {
   query = null
 }
 
-/** Streams gzip parts -> gunzip -> OPFS, then checks the result opens. */
-async function install(id: number, file: string, parts: string[], total: number, expectedSize: number) {
+export interface Expected {
+  lang: string
+  buildDate: string
+  size: number
+}
+
+/**
+ * Checks a stored dictionary is the one we think it is and isn't damaged: right language
+ * and build, right size, and SQLite's own integrity check. Returns a problem or null.
+ */
+function verify(file: string, expected: Expected): string | null {
+  const reuse = dbFile === file && db
+  let database: Database
+  try {
+    database = reuse || openReadOnly(file)
+  } catch {
+    return 'missing'
+  }
+  try {
+    const q = queryFor(database)
+    const meta = readMeta(q)
+    checkSchema(meta)
+    if (meta.lang !== expected.lang || meta.build_date !== expected.buildDate) return 'wrong dictionary'
+    const [[pages]] = q('PRAGMA page_count')
+    const [[pageSize]] = q('PRAGMA page_size')
+    if (Number(pages) * Number(pageSize) !== expected.size) return 'wrong size'
+    const [[check]] = q('PRAGMA quick_check')
+    return check === 'ok' ? null : 'corrupt'
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error)
+  } finally {
+    if (!reuse) database.close()
+  }
+}
+
+/**
+ * Storage changes (install, remove, verify) run one at a time. The storage pool only marks
+ * a slot as taken once an import finishes, so overlapping imports would share a file.
+ */
+let storageQueue: Promise<unknown> = Promise.resolve()
+function exclusive<T>(task: () => Promise<T> | T): Promise<T> {
+  const run = storageQueue.then(task, task)
+  storageQueue = run.catch(() => {})
+  return run
+}
+
+/** Streams gzip parts -> gunzip -> OPFS, then verifies the result. */
+async function install(id: number, file: string, parts: string[], total: number, expected: Expected) {
+  const expectedSize = expected.size
   let loaded = 0
   let lastReport = 0
   const report = () => {
@@ -142,15 +189,11 @@ async function install(id: number, file: string, parts: string[], total: number,
     throw new Error('The downloaded dictionary is incomplete. Please try again.')
   }
 
-  const check = openReadOnly(file)
-  try {
-    checkSchema(readMeta(queryFor(check)))
-  } catch (error) {
-    check.close()
+  const problem = verify(file, expected)
+  if (problem) {
     requirePool().unlink(file)
-    throw error
+    throw new Error(`The downloaded dictionary is damaged (${problem}). Please try again.`)
   }
-  check.close()
 }
 
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
@@ -174,11 +217,24 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         result = query ? entries(query, request.word) : []
         break
       case 'install':
-        await install(request.id, request.file, request.parts, request.total, request.uncompressedSize)
+        await exclusive(() =>
+          install(request.id, request.file, request.parts, request.total, {
+            lang: request.lang,
+            buildDate: request.buildDate,
+            size: request.uncompressedSize,
+          }),
+        )
+        break
+      case 'verify':
+        result = await exclusive(() =>
+          verify(request.file, { lang: request.lang, buildDate: request.buildDate, size: request.uncompressedSize }),
+        )
         break
       case 'remove':
-        if (dbFile === request.file) close()
-        requirePool().unlink(request.file)
+        await exclusive(() => {
+          if (dbFile === request.file) close()
+          requirePool().unlink(request.file)
+        })
         break
     }
     post({ id: request.id, type: 'result', result })
