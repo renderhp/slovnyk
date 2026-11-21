@@ -206,6 +206,12 @@ export function AboutPage({ onBack }: { onBack: () => void }) {
               <span>Version</span>
               <span class="muted">{__APP_VERSION__}</span>
             </div>
+            <div class="row spread">
+              <span>Build</span>
+              <span class="muted">
+                {__BUILD_ID__} · {shortDate(__BUILD_DATE__)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

@@ -1,12 +1,28 @@
 import preact from '@preact/preset-vite'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
 import pkg from './package.json'
+
+/** Short commit of this build, shown in About so you can tell whether an update arrived. */
+function buildId(): string {
+  const sha = process.env.GITHUB_SHA?.slice(0, 7)
+  if (sha) return sha
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim()
+  } catch {
+    return 'dev'
+  }
+}
 
 export default defineConfig({
   // Relative base so the app works from any path (e.g. GitHub Pages at /slovnyk/).
   base: './',
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_ID__: JSON.stringify(buildId()),
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
+  },
   plugins: [
     preact(),
     VitePWA({
