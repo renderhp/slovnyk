@@ -5,7 +5,7 @@ An offline dictionary built on Wiktionary: a web app you install to your home sc
 
 - **Data:** [Wiktionary](https://www.wiktionary.org), via the [Wiktextract](https://github.com/tatuylonen/wiktextract) extracts published on [kaikki.org](https://kaikki.org).
 - **Dictionaries:** built monthly into SQLite files by `pipeline/` and published as [GitHub releases](../../releases). The app downloads the language you pick.
-- **Languages:** English, Ukrainian, German, Spanish and French, all with English definitions (from English Wiktionary).
+- **Languages:** English (English words, English definitions).
 
 ## Building a dictionary locally
 

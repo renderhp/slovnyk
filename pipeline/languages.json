@@ -3,25 +3,5 @@
     "name": "English",
     "lang_code": "en",
     "source_url": "https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl.gz"
-  },
-  "uk": {
-    "name": "Ukrainian",
-    "lang_code": "uk",
-    "source_url": "https://kaikki.org/dictionary/Ukrainian/kaikki.org-dictionary-Ukrainian.jsonl.gz"
-  },
-  "de": {
-    "name": "German",
-    "lang_code": "de",
-    "source_url": "https://kaikki.org/dictionary/German/kaikki.org-dictionary-German.jsonl.gz"
-  },
-  "es": {
-    "name": "Spanish",
-    "lang_code": "es",
-    "source_url": "https://kaikki.org/dictionary/Spanish/kaikki.org-dictionary-Spanish.jsonl.gz"
-  },
-  "fr": {
-    "name": "French",
-    "lang_code": "fr",
-    "source_url": "https://kaikki.org/dictionary/French/kaikki.org-dictionary-French.jsonl.gz"
   }
 }
